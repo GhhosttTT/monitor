@@ -1,0 +1,81 @@
+<resources>
+    <string name="app_name">MonitorApp</string>
+    <string name="title_cameras">摄像头</string>
+    <string name="title_history">历史记录</string>
+    <string name="title_settings">设置</string>
+    <string name="title_pairing">绑定摄像头</string>
+    <string name="title_player">视频播放</string>
+    <string name="title_login">登录</string>
+    <string name="title_register">注册</string>
+    
+    <!-- Auth -->
+    <string name="login">登录</string>
+    <string name="register">注册</string>
+    <string name="email">邮箱</string>
+    <string name="password">密码</string>
+    <string name="username">用户名</string>
+    <string name="no_account">还没有账户？</string>
+    <string name="has_account">已有账户？</string>
+    <string name="logout">注销</string>
+    <string name="current_password">当前密码</string>
+    <string name="new_password">新密码</string>
+    <string name="confirm_new_password">确认新密码</string>
+    <string name="submit">提交</string>
+    <string name="cancel">取消</string>
+    
+    <!-- Camera Fragment -->
+    <string name="camera_not_bound">未绑定摄像头</string>
+    <string name="camera_bind_prompt">您需要先绑定摄像头才能查看实时画面</string>
+    <string name="bind_camera">绑定摄像头</string>
+    <string name="status_ready">准备就绪</string>
+    <string name="start_recording">开始录制</string>
+    <string name="stop_recording">停止录制</string>
+    
+    <!-- Camera List Fragment -->
+    <string name="no_camera_bound">还未绑定任何摄像头</string>
+    <string name="add_first_camera_prompt">点击下方按钮添加您的第一个摄像头</string>
+    <string name="add_camera">添加摄像头</string>
+    
+    <!-- History Fragment -->
+    <string name="no_history">暂无历史记录</string>
+    <string name="history_bind_prompt">您需要先绑定摄像头才能查看历史记录</string>
+    
+    <!-- Pairing Fragment -->
+    <string name="pairing_title">绑定摄像头</string>
+    <string name="pairing_description">请确保摄像头已进入配网模式</string>
+    <string name="scan_qr_code">扫描二维码</string>
+    <string name="pairing_success_prompt">绑定成功后，您可以在摄像头列表中查看和管理设备</string>
+    
+    <!-- Settings Fragment -->
+    <string name="account_settings">账户设置</string>
+    <string name="change_password">更改密码</string>
+    <string name="notification_settings">通知设置</string>
+    <string name="push_notifications">推送通知</string>
+    <string name="video_settings">视频设置</string>
+    <string name="hd_quality">高清画质</string>
+    <string name="auto_record">自动录制</string>
+    <string name="storage_duration">存储时长</string>
+    <string name="days">%s 天</string>
+    <string name="about">关于</string>
+    <string name="check_update">检查更新</string>
+    
+    <!-- Video Player Fragment -->
+    <string name="video_playback">视频播放</string>
+    <string name="play_pause">播放/暂停</string>
+    
+    <!-- Item layouts -->
+    <string name="living_room_camera">客厅摄像头</string>
+    <string name="camera_id_label">ID:</string>
+    <string name="status_label">状态:</string>
+    <string name="online">在线</string>
+    <string name="camera_label">摄像头:</string>
+    <string name="duration_label">时长:</string>
+    <string name="minutes">分钟</string>
+    <string name="normal">正常</string>
+    <string name="play">播放</string>
+    
+    <!-- Common -->
+    <string name="date_time_placeholder">2025-10-28 14:30</string>
+    <string name="duration_placeholder">10分钟</string>
+    <string name="camera_id_placeholder">CAM001</string>
+</resources>
