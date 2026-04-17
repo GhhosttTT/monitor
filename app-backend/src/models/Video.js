@@ -10,6 +10,14 @@ Video.init({
     primaryKey: true,
     autoIncrement: true
   },
+  cameraId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: Camera,
+      key: 'id'
+    }
+  },
   filename: {
     type: DataTypes.STRING,
     allowNull: false,

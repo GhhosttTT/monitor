@@ -1,16 +1,14 @@
 const express = require('express');
 const router = express.Router();
 
-const authRoutes = require('./auth');
 const cameraRoutes = require('./camera');
 const videoRoutes = require('./video');
-const userRoutes = require('./user');
-const adminRoutes = require('./admin');
+const recordingPlanRoutes = require('./recordingPlan');
+const systemRoutes = require('./system');
 
-router.use('/auth', authRoutes);
 router.use('/cameras', cameraRoutes);
 router.use('/videos', videoRoutes);
-router.use('/users', userRoutes);
-router.use('/admins', adminRoutes);
+router.use('/recording-plans', recordingPlanRoutes);
+router.use('/system', systemRoutes);
 
 module.exports = router;

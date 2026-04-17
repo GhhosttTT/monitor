@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { 
   Table, 
   Button, 
@@ -9,138 +9,95 @@ import {
   message, 
   Popconfirm,
   Card,
-  Tag
+  Tag,
+  Row,
+  Col
 } from 'antd'
+import { VideoCameraOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons'
+import { cameraAPI } from '../services/api'
 import axios from 'axios'
 
 const { Option } = Select
 
 const CameraManagement = () => {
   const [cameras, setCameras] = useState([])
-  const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
-  const [modalVisible, setModalVisible] = useState(false)
-  const [editingCamera, setEditingCamera] = useState(null)
-  const [form] = Form.useForm()
+  const [streamModalVisible, setStreamModalVisible] = useState(false)
+  const [currentCamera, setCurrentCamera] = useState(null)
+  const canvasRef = useRef(null)
+  const videoStreamRef = useRef(null)
 
   // 获取摄像头列表
   const fetchCameras = async () => {
     setLoading(true)
     try {
-      // 这里应该调用实际的API
-      // const response = await axios.get('/api/cameras')
-      // 模拟数据
-      const response = {
-        data: [
-          {
-            id: '1',
-            name: '客厅摄像头',
-            serialNumber: 'SN000001',
-            owner: 'user1',
-            status: 'online',
-            lastConnected: '2022-01-01T10:00:00Z',
-            settings: {
-              resolution: '2k',
-              storageRetention: 30
-            }
-          },
-          {
-            id: '2',
-            name: '卧室摄像头',
-            serialNumber: 'SN000002',
-            owner: 'user1',
-            status: 'offline',
-            lastConnected: '2022-01-01T09:00:00Z',
-            settings: {
-              resolution: '2k',
-              storageRetention: 30
-            }
-          }
-        ]
-      }
-      setCameras(response.data)
+      const data = await cameraAPI.getList()
+      console.log('摄像头列表:', data)
+      setCameras(data || [])
     } catch (error) {
+      console.error('获取摄像头列表失败:', error)
       message.error('获取摄像头列表失败')
     } finally {
       setLoading(false)
     }
   }
 
-  // 获取用户列表（用于选择摄像头所有者）
-  const fetchUsers = async () => {
-    try {
-      // 这里应该调用实际的API
-      // const response = await axios.get('/api/users')
-      // 模拟数据
-      const response = {
-        data: [
-          {
-            id: 'user1',
-            username: 'user1'
-          },
-          {
-            id: 'user2',
-            username: 'user2'
-          }
-        ]
-      }
-      setUsers(response.data)
-    } catch (error) {
-      message.error('获取用户列表失败')
-    }
-  }
-
   useEffect(() => {
     fetchCameras()
-    fetchUsers()
+    // 每10秒刷新一次
+    const interval = setInterval(fetchCameras, 10000)
+    return () => clearInterval(interval)
   }, [])
 
-  // 处理添加/编辑摄像头
-  const handleFinish = async (values) => {
-    try {
-      if (editingCamera) {
-        // 更新摄像头
-        // await axios.put(`/api/cameras/${editingCamera.id}`, values)
-        message.success('摄像头更新成功')
-      } else {
-        // 创建摄像头
-        // await axios.post('/api/cameras', values)
-        message.success('摄像头创建成功')
+  // 查看实时视频流
+  const handleViewStream = (camera) => {
+    console.log('点击查看实时监控:', camera)
+    setCurrentCamera(camera)
+    setStreamModalVisible(true)
+    
+    // 延迟加载视频流,确保DOM已渲染
+    setTimeout(() => {
+      if (videoStreamRef.current) {
+        videoStreamRef.current.src = `/api/cameras/${camera.id}/stream?t=${Date.now()}`
       }
-      setModalVisible(false)
-      form.resetFields()
-      fetchCameras()
-    } catch (error) {
-      message.error(editingCamera ? '摄像头更新失败' : '摄像头创建失败')
-    }
+    }, 100)
   }
 
-  // 处理删除摄像头
-  const handleDeleteCamera = async (cameraId) => {
+  // 关闭视频流模态框
+  const handleCloseStream = () => {
+    // 停止视频流
+    if (videoStreamRef.current) {
+      videoStreamRef.current.src = ''
+      videoStreamRef.current = null
+    }
+    
+    setStreamModalVisible(false)
+    // 延迟清空currentCamera，确保元素先被销毁
+    setTimeout(() => {
+      setCurrentCamera(null)
+    }, 100)
+  }
+
+  // 删除摄像头
+  const handleDeleteCamera = async (cameraId, cameraName) => {
     try {
-      // await axios.delete(`/api/cameras/${cameraId}`)
-      message.success('摄像头删除成功')
+      console.log(`🗑️ 删除摄像头: ${cameraName} (ID: ${cameraId})`)
+      
+      // 调用后端API删除
+      const response = await axios.delete(`/api/cameras/${cameraId}`)
+      
+      if (response.data.message) {
+        message.success(response.data.message)
+      } else {
+        message.success('摄像头删除成功')
+      }
+      
+      // 刷新列表
       fetchCameras()
     } catch (error) {
-      message.error('摄像头删除失败')
+      console.error('删除摄像头失败:', error)
+      message.error('删除失败: ' + (error.response?.data?.message || error.message))
     }
-  }
-
-  // 处理编辑摄像头
-  const handleEditCamera = (camera) => {
-    setEditingCamera(camera)
-    form.setFieldsValue({
-      ...camera,
-      ownerId: camera.owner
-    })
-    setModalVisible(true)
-  }
-
-  // 显示添加摄像头模态框
-  const showAddCameraModal = () => {
-    setEditingCamera(null)
-    form.resetFields()
-    setModalVisible(true)
   }
 
   // 状态标签颜色
@@ -161,51 +118,52 @@ const CameraManagement = () => {
       key: 'name',
     },
     {
-      title: '序列号',
-      dataIndex: 'serialNumber',
-      key: 'serialNumber',
-    },
-    {
-      title: '所有者',
-      dataIndex: 'owner',
-      key: 'owner',
-      render: (_, record) => {
-        const user = users.find(u => u.id === record.owner)
-        return user ? user.username : '未知用户'
-      }
+      title: 'IP地址',
+      dataIndex: 'ipAddress',
+      key: 'ipAddress',
+      render: (text) => text || '-'
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Tag color={getStatusColor(status)}>{status}</Tag>
+        <Tag color={getStatusColor(status)}>{status === 'online' ? '在线' : status === 'offline' ? '离线' : '错误'}</Tag>
       )
     },
     {
-      title: '最后连接时间',
-      dataIndex: 'lastConnected',
-      key: 'lastConnected',
-      render: (text) => text ? new Date(text).toLocaleString() : '从未连接'
+      title: '最后心跳',
+      dataIndex: 'lastHeartbeat',
+      key: 'lastHeartbeat',
+      render: (text) => text ? new Date(text).toLocaleString('zh-CN') : '从未连接'
     },
     {
       title: '操作',
       key: 'action',
+      width: 250,
       render: (_, record) => (
         <span>
           <Button 
-            type="link" 
-            onClick={() => handleEditCamera(record)}
+            type="primary" 
+            icon={<EyeOutlined />}
+            onClick={() => handleViewStream(record)}
+            disabled={record.status !== 'online'}
+            style={{ marginRight: 8 }}
           >
-            编辑
+            实时监控
           </Button>
           <Popconfirm
-            title="确定要删除这个摄像头吗？"
-            onConfirm={() => handleDeleteCamera(record.id)}
+            title={`确定要删除 "${record.name}" 吗？`}
+            description="删除后，该设备需要重新配网才能接入系统"
+            onConfirm={() => handleDeleteCamera(record.id, record.name)}
             okText="确定"
             cancelText="取消"
+            okButtonProps={{ danger: true }}
           >
-            <Button type="link" danger>
+            <Button 
+              danger
+              icon={<DeleteOutlined />}
+            >
               删除
             </Button>
           </Popconfirm>
@@ -215,56 +173,94 @@ const CameraManagement = () => {
   ]
 
   return (
-    <Card title="摄像头管理" extra={<Button type="primary" onClick={showAddCameraModal}>添加摄像头</Button>}>
-      <Table 
-        dataSource={cameras} 
-        columns={columns} 
-        loading={loading}
-        rowKey="id"
-      />
+    <div>
+      <Card title="摄像头管理">
+        <Table 
+          dataSource={cameras} 
+          columns={columns} 
+          loading={loading}
+          rowKey="id"
+        />
+      </Card>
 
+      {/* 实时视频流模态框 */}
       <Modal
-        title={editingCamera ? "编辑摄像头" : "添加摄像头"}
-        visible={modalVisible}
-        onCancel={() => {
-          setModalVisible(false)
-          form.resetFields()
-        }}
-        onOk={() => form.submit()}
+        title={`实时监控 - ${currentCamera?.name}`}
+        open={streamModalVisible}
+        onCancel={handleCloseStream}
+        footer={null}
+        width={900}
+        destroyOnClose={true}
       >
-        <Form
-          form={form}
-          onFinish={handleFinish}
-          layout="vertical"
-        >
-          <Form.Item
-            name="name"
-            label="摄像头名称"
-            rules={[{ required: true, message: '请输入摄像头名称' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="serialNumber"
-            label="序列号"
-            rules={[{ required: true, message: '请输入序列号' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="ownerId"
-            label="所有者"
-            rules={[{ required: true, message: '请选择所有者' }]}
-          >
-            <Select>
-              {users.map(user => (
-                <Option key={user.id} value={user.id}>{user.username}</Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Form>
+        {currentCamera && currentCamera.ipAddress ? (
+          <div style={{ textAlign: 'center', padding: '10px' }}>
+            <div style={{ 
+              marginBottom: '16px',
+              padding: '10px',
+              backgroundColor: '#f0f2f5',
+              borderRadius: '4px'
+            }}>
+              <p style={{ margin: '5px 0' }}>
+                <strong>设备名称:</strong> {currentCamera.name}
+              </p>
+              <p style={{ margin: '5px 0' }}>
+                <strong>设备IP:</strong> {currentCamera.ipAddress}
+              </p>
+              <p style={{ margin: '5px 0' }}>
+                <strong>视频流地址:</strong> /api/cameras/{currentCamera.id}/stream
+              </p>
+            </div>
+            
+            <div style={{ 
+              border: '2px solid #1890ff',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              backgroundColor: '#000',
+              minHeight: '400px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {/* 使用img标签加载MJPEG流 */}
+              <img 
+                ref={videoStreamRef}
+                alt="实时视频流"
+                style={{ 
+                  width: '100%',
+                  maxHeight: '600px',
+                  display: 'block'
+                }}
+                onLoad={(e) => {
+                  console.log('✅ 视频流开始加载')
+                }}
+                onError={(e) => {
+                  console.error('❌ 视频流加载失败:', e)
+                  e.target.style.display = 'none'
+                  // 显示错误提示
+                  const parent = e.target.parentElement
+                  if (parent && !parent.querySelector('.error-msg')) {
+                    const errorMsg = document.createElement('div')
+                    errorMsg.className = 'error-msg'
+                    errorMsg.style.color = '#fff'
+                    errorMsg.style.padding = '20px'
+                    errorMsg.textContent = '无法加载视频流，请检查设备是否在线'
+                    parent.appendChild(errorMsg)
+                  }
+                }}
+              />
+            </div>
+            
+            <div style={{ marginTop: 16, color: '#666', fontSize: '12px' }}>
+              <p>💡 提示：视频流通过后端中转，服务器承担并发压力</p>
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>暂无设备信息</p>
+          </div>
+        )}
       </Modal>
-    </Card>
+    </div>
   )
 }
 
