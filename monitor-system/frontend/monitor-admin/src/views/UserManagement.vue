@@ -79,7 +79,11 @@
             <el-table :data="videos" style="width: 100%">
               <el-table-column prop="name" label="视频名称" width="200" />
               <el-table-column prop="cameraName" label="所属摄像头" width="180" />
-              <el-table-column prop="duration" label="时长" width="100" />
+              <el-table-column prop="duration" label="时长" width="100">
+                <template #default="scope">
+                  {{ formatDuration(scope.row.duration) }}
+                </template>
+              </el-table-column>
               <el-table-column prop="size" label="大小" width="100">
                 <template #default="scope">
                   {{ formatFileSize(scope.row.size) }}
@@ -155,7 +159,7 @@ interface Video {
   id: number
   name: string
   cameraName: string
-  duration: string
+  duration: number  // 时长为秒数（数字）
   size: number
   createdAt: string
 }
@@ -212,6 +216,23 @@ const formatFileSize = (bytes: number) => {
   if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB'
   if (bytes < 1073741824) return (bytes / 1048576).toFixed(2) + ' MB'
   return (bytes / 1073741824).toFixed(2) + ' GB'
+}
+
+// 格式化时长（秒 -> HH:MM:SS）
+const formatDuration = (seconds: number) => {
+  if (!seconds || seconds <= 0) return '00:00:00'
+  
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  
+  // 如果小于1小时，只显示 MM:SS
+  if (hours === 0) {
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }
+  
+  // 否则显示 HH:MM:SS
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 }
 
 // 添加用户

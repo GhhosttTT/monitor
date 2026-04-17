@@ -12,7 +12,6 @@ import {
   Typography,
   List,
   Badge,
-  Select,
   DatePicker,
   Input
 } from 'antd'
@@ -31,7 +30,6 @@ import {
 } from '@ant-design/icons'
 
 const { Text, Title } = Typography
-const { Option } = Select
 const { RangePicker } = DatePicker
 
 const VideoManagement = () => {
@@ -46,7 +44,8 @@ const VideoManagement = () => {
   // 筛选条件
   const [searchText, setSearchText] = useState('')
   const [dateRange, setDateRange] = useState(null)
-  const [motionFilter, setMotionFilter] = useState('all') // all, yes, no
+  const [appliedSearchText, setAppliedSearchText] = useState('')
+  const [appliedDateRange, setAppliedDateRange] = useState(null)
 
   // 获取摄像头列表
   const fetchCameras = async () => {
@@ -61,14 +60,26 @@ const VideoManagement = () => {
   }
 
   // 获取指定摄像头的视频列表
-  const fetchVideos = async (cameraId) => {
+  const fetchVideos = async (cameraId, searchParams = {}) => {
     if (!cameraId) return
     
     setLoading(true)
     try {
-      const response = await axios.get('/api/videos', { 
-        params: { cameraId }
-      })
+      const params = { cameraId }
+      
+      // 添加搜索参数
+      if (searchParams.filename) {
+        params.filename = searchParams.filename
+      }
+      if (searchParams.startDate) {
+        params.startDate = searchParams.startDate
+      }
+      if (searchParams.endDate) {
+        params.endDate = searchParams.endDate
+      }
+      
+      console.log('请求参数:', params)
+      const response = await axios.get('/api/videos', { params })
       console.log('视频列表响应:', response.data)
       setVideos(response.data.videos || response.data || [])
     } catch (error) {
@@ -83,7 +94,7 @@ const VideoManagement = () => {
   // 选择摄像头
   const handleSelectCamera = (camera) => {
     setSelectedCamera(camera)
-    fetchVideos(camera.id)
+    fetchVideos(camera.id, {})  // 初始加载时不带筛选条件
   }
 
   // 返回摄像头列表
@@ -94,42 +105,78 @@ const VideoManagement = () => {
     // 重置筛选条件
     setSearchText('')
     setDateRange(null)
-    setMotionFilter('all')
+    setAppliedSearchText('')
+    setAppliedDateRange(null)
   }
 
-  // 应用筛选
-  useEffect(() => {
-    if (!videos.length) {
-      setFilteredVideos([])
-      return
-    }
-
-    let filtered = [...videos]
-
-    // 文件名搜索
+  // 应用筛选(点击搜索按钮时触发)
+  const handleSearch = () => {
+    if (!selectedCamera) return
+    
+    // 构建搜索参数
+    const searchParams = {}
+    
     if (searchText) {
-      filtered = filtered.filter(video => 
-        video.filename.toLowerCase().includes(searchText.toLowerCase())
-      )
+      searchParams.filename = searchText
     }
-
-    // 日期范围筛选
+    
     if (dateRange && dateRange.length === 2) {
       const [startDate, endDate] = dateRange
-      filtered = filtered.filter(video => {
-        const videoDate = new Date(video.startTime)
-        return videoDate >= startDate && videoDate <= endDate
-      })
+      searchParams.startDate = startDate.toISOString()
+      searchParams.endDate = endDate.toISOString()
     }
+    
+    console.log('执行搜索:', searchParams)
+    
+    // 调用后端接口
+    fetchVideos(selectedCamera.id, searchParams)
+  }
 
-    // 移动侦测筛选
-    if (motionFilter !== 'all') {
-      const hasMotion = motionFilter === 'yes'
-      filtered = filtered.filter(video => video.hasMotion === hasMotion)
+  // 重置筛选
+  const handleResetFilters = () => {
+    setSearchText('')
+    setDateRange(null)
+    setAppliedSearchText('')
+    setAppliedDateRange(null)
+    
+    // 重新加载所有视频(不带筛选条件)
+    if (selectedCamera) {
+      fetchVideos(selectedCamera.id, {})
     }
+  }
 
-    setFilteredVideos(filtered)
-  }, [videos, searchText, dateRange, motionFilter])
+  // 应用筛选逻辑 - 已改为后端筛选，此useEffect不再需要
+  // useEffect(() => {
+  //   if (!videos.length) {
+  //     setFilteredVideos([])
+  //     return
+  //   }
+  //
+  //   let filtered = [...videos]
+  //
+  //   // 文件名搜索
+  //   if (appliedSearchText) {
+  //     filtered = filtered.filter(video => 
+  //       video.filename.toLowerCase().includes(appliedSearchText.toLowerCase())
+  //     )
+  //   }
+  //
+  //   // 日期范围筛选
+  //   if (appliedDateRange && appliedDateRange.length === 2) {
+  //     const [startDate, endDate] = appliedDateRange
+  //     filtered = filtered.filter(video => {
+  //       const videoDate = new Date(video.startTime)
+  //       return videoDate >= startDate && videoDate <= endDate
+  //     })
+  //   }
+  //
+  //   setFilteredVideos(filtered)
+  // }, [videos, appliedSearchText, appliedDateRange])
+  
+  // 直接使用 videos，因为已经是后端筛选后的结果
+  useEffect(() => {
+    setFilteredVideos(videos)
+  }, [videos])
 
   useEffect(() => {
     fetchCameras()
@@ -368,6 +415,7 @@ const VideoManagement = () => {
                 prefix={<SearchOutlined />}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
+                onPressEnter={handleSearch}
                 style={{ width: 200 }}
                 allowClear
               />
@@ -377,34 +425,29 @@ const VideoManagement = () => {
                 placeholder={['开始日期', '结束日期']}
                 value={dateRange}
                 onChange={setDateRange}
+                disabledDate={(current) => {
+                  // 禁用今天之后的日期
+                  return current && current > new Date()
+                }}
                 style={{ width: 240 }}
               />
               
-              {/* 移动侦测筛选 */}
-              <Select
-                value={motionFilter}
-                onChange={setMotionFilter}
-                style={{ width: 120 }}
-                placeholder="移动侦测"
+              {/* 搜索按钮 */}
+              <Button 
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={handleSearch}
               >
-                <Option value="all">全部</Option>
-                <Option value="yes">有移动</Option>
-                <Option value="no">无移动</Option>
-              </Select>
+                搜索
+              </Button>
               
               {/* 重置按钮 */}
-              {(searchText || dateRange || motionFilter !== 'all') && (
-                <Button 
-                  icon={<FilterOutlined />}
-                  onClick={() => {
-                    setSearchText('')
-                    setDateRange(null)
-                    setMotionFilter('all')
-                  }}
-                >
-                  重置
-                </Button>
-              )}
+              <Button 
+                icon={<FilterOutlined />}
+                onClick={handleResetFilters}
+              >
+                重置
+              </Button>
             </Space>
           }
         >

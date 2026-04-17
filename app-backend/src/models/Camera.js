@@ -57,8 +57,8 @@ Camera.init({
   },
 
   resolution: {
-    type: DataTypes.ENUM('720p', '1080p', '2k', '4k'),
-    defaultValue: '2k',
+    type: DataTypes.ENUM('vga', 'svga', 'hd', 'uxga'),
+    defaultValue: 'svga',  // ESP32-CAM OV2640实际分辨率: 800x600
     field: 'settings_resolution'
   },
   storageRetention: {

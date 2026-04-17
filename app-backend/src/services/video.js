@@ -17,20 +17,37 @@ class VideoService {
    */
   async getVideos(filters = {}) {
     try {
-      const { cameraId, startDate, endDate, page = 1, limit = 20 } = filters;
+      const { cameraId, startDate, endDate, filename, page = 1, limit = 20 } = filters;
       
       const where = {};
       if (cameraId) {
         where.cameraId = cameraId;
       }
+      
+      // 日期范围筛选（使用 startTime 字段）
       if (startDate || endDate) {
         where.startTime = {};
         if (startDate) {
-          where.startTime[Op.gte] = new Date(startDate);
+          // 将日期字符串转换为 Date 对象，设置为当天 00:00:00
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          where.startTime[Op.gte] = start;
+          console.log('开始时间:', start);
         }
         if (endDate) {
-          where.startTime[Op.lte] = new Date(endDate);
+          // 将日期字符串转换为 Date 对象，设置为当天 23:59:59
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          where.startTime[Op.lte] = end;
+          console.log('结束时间:', end);
         }
+      }
+      
+      // 文件名模糊搜索
+      if (filename) {
+        where.filename = {
+          [Op.like]: `%${filename}%`
+        };
       }
 
       console.log('视频筛选条件:', JSON.stringify(where, null, 2));

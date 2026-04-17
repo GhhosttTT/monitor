@@ -101,7 +101,7 @@ async function scanAndImportVideos() {
             filename: filename,
             fileUrl: fileUrl,
             duration: estimatedDuration,
-            resolution: '2k',
+            resolution: 'svga',  // ESP32实际分辨率: 800x600
             hasMotion: false,
             startTime: recordedAt,
             endTime: new Date(recordedAt.getTime() + estimatedDuration * 1000),

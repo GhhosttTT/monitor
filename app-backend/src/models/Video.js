@@ -53,8 +53,8 @@ Video.init({
     allowNull: false
   },
   resolution: {
-    type: DataTypes.ENUM('720p', '1080p', '2k', '4k'),
-    defaultValue: '2k'
+    type: DataTypes.ENUM('vga', 'svga', 'hd', 'uxga'),
+    defaultValue: 'svga'
   },
   hasMotion: {
     type: DataTypes.BOOLEAN,

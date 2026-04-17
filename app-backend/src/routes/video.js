@@ -8,12 +8,13 @@ const { exec } = require('child_process');
 // 获取视频列表（支持筛选）
 router.get('/', async (req, res) => {
   try {
-    const { cameraId, startDate, endDate, page, limit } = req.query;
+    const { cameraId, startDate, endDate, page, limit, filename } = req.query;
     
     const result = await videoService.getVideos({
       cameraId: cameraId ? parseInt(cameraId) : undefined,
       startDate,
       endDate,
+      filename, // 添加文件名模糊搜索
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 20
     });

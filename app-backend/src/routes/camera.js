@@ -169,6 +169,22 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// 获取单个摄像头信息
+router.get('/:id', async (req, res) => {
+  try {
+    const camera = await Camera.findByPk(req.params.id);
+    
+    if (!camera) {
+      return res.status(404).json({ message: '摄像头不存在' });
+    }
+    
+    res.json(camera);
+  } catch (error) {
+    console.error('获取摄像头信息错误:', error);
+    res.status(500).json({ message: '服务器错误' });
+  }
+});
+
 // 删除摄像头
 router.delete('/:id', async (req, res) => {
   try {

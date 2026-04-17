@@ -64,9 +64,9 @@ const Dashboard = () => {
     try {
       console.log('正在获取磁盘信息...')
       const response = await axios.get('/api/system/disk-usage')
-      if (response.success) {
-        setDiskInfo(response.data)
-        console.log('磁盘信息:', response.data)
+      if (response.data && response.data.success) {
+        setDiskInfo(response.data.data)
+        console.log('磁盘信息:', response.data.data)
       }
     } catch (err) {
       console.error('获取磁盘信息失败:', err)
@@ -95,16 +95,16 @@ const Dashboard = () => {
 
   // 计算存储使用率（使用真实磁盘信息）
   const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 B'
+    if (!bytes || bytes === 0) return '0 B'
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const storageUsedGB = formatBytes(diskInfo.used || videoStats.totalSize)
-  const storageTotalGB = formatBytes(diskInfo.total || 100 * 1024 * 1024 * 1024)
-  const storagePercent = diskInfo.usagePercent || ((videoStats.totalSize / (100 * 1024 * 1024 * 1024)) * 100).toFixed(1)
+  const storageUsedGB = formatBytes(diskInfo.used)
+  const storageTotalGB = formatBytes(diskInfo.total)
+  const storagePercent = diskInfo.usagePercent || 0
 
   // 摄像头状态数据
   const cameraStatusData = [
